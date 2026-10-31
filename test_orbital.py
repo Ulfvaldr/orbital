@@ -94,6 +94,15 @@ class OrbitalReadOnlyTests(unittest.TestCase):
         with self.assertRaises(HTTPError) as error: urlopen(Request(self.base + "/api/fleet", method="POST"))
         self.assertEqual(error.exception.code, 501)
 
+    def test_failed_state_has_distinct_static_ui_contract(self):
+        with open(os.path.join(server.ROOT, "index.html"), encoding="utf-8") as page:
+            html = page.read()
+        self.assertIn(".failed{background:#f87171}", html)
+        self.assertNotIn(".failed{background:var(--teal)}", html)
+        self.assertIn("a.state==='running'?'pulse':''", html)
+        self.assertIn("<span class=\"dot ${a.state}\">", html)
+        self.assertIn("<button class=\"agent ${a.state==='running'?'pulse':''}\"", html)
+
     def test_missing_database_degrades_without_fabrication(self):
         old = os.environ["HERMES_KANBAN_DB"]; os.environ["HERMES_KANBAN_DB"] = self.db + ".missing"
         try:
