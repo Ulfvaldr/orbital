@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orbital-fleet-overview"
+version = "0.1.0"
+description = "Local, read-only Fleet Overview for Hermes kanban state"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "Orbital contributors" },
+]
+dependencies = []
+
+[tool.orbital]
+release = "v0.1.0"
+runtime = "Python standard library"

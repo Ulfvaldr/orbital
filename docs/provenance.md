@@ -1,7 +1,7 @@
-# Reconstruction provenance
+# Release provenance
 
-The original Orbital implementation workspace was reported missing or not a Git working tree. Recovery reports identified a diagnostic probe containing `server.py`, `index.html`, and smoke tests, plus approved design, data-interaction, and acceptance documents in the Hermes task attachments.
+Orbital v0.1.0 is the canonical local read-only observability application in this repository. Its implementation boundary is defined by the checked-in server, static UI, tests, and documentation; Hermes remains the authority for agent execution and kanban state.
 
-This repository was reconstructed in the authorized canonical directory from those approved requirements and evidence. The probe was not treated as authoritative: the reconstruction adds deterministic active-task selection, explicit run/event/dependency read APIs, invalid-source semantics, and regression coverage. No Hermes database, task board, or other repository was modified.
+The application reads the configured Hermes kanban SQLite database and derives display state without writing to Hermes. Deterministic active-task selection, explicit run/event/dependency read APIs, invalid-source semantics, and regression coverage are part of the v0.1.0 implementation. No Hermes database, task board, or other external system is modified.
 
 Synthetic SQLite data exists only inside automated tests and is clearly test-local. The running app uses the configured real Hermes kanban database and labels source availability.

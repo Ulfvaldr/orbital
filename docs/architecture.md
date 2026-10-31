@@ -1,6 +1,6 @@
 # Orbital architecture
 
-Orbital is a local, read-only web application. `server.py` is a standard-library HTTP server and SQLite adapter; `index.html` is the static browser UI; `test_orbital.py` exercises the derived model and HTTP contract.
+Orbital v0.1.0 is a local, read-only web application and companion viewer for Hermes. Hermes owns execution and kanban state. `server.py` is a standard-library HTTP server and SQLite adapter; `index.html` is the static browser UI; `test_orbital.py` exercises the derived model and HTTP contract.
 
 Data source and safety:
 

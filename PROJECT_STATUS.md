@@ -1,6 +1,6 @@
-# Orbital project status
+# Orbital v0.1.0 project status
 
-Status: reconstructed read-only MVP, locally validated.
+Status: v0.1.0 read-only MVP, locally validated.
 
 Canonical path: `C:\Users\rvanb\Projects\orbital`
 
@@ -16,4 +16,4 @@ Implemented:
 
 Not implemented by design: orchestration controls, task editing, n8n integration, cost/token fabrication, authentication, remote deployment, and replay/re-execution.
 
-The original accepted Orbital workspace was not recoverable as a durable checkout. This implementation is a reconstruction from the approved specifications and probe evidence; see `docs/provenance.md`.
+Release focus: data correctness, operational visibility, read-only safety, and reliable local operation. Visual polish, deeper telemetry, and orchestration controls remain future work. See `docs/provenance.md` for the implementation boundary and source-of-truth notes.

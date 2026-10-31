@@ -1,19 +1,19 @@
-# Orbital MVP Project Status
+# Orbital v0.1.0 Project Status
 
 Updated: 2026-10-31
 
 ## Status summary
 
-Orbital's read-only MVP has been reconstructed as a durable local Python/HTML Fleet Overview for Hermes kanban state. It is intentionally observational: it reads local kanban SQLite data and presents the supported Hermes agent roster without task mutation controls.
+Orbital's early read-only MVP is a durable local Python/HTML Fleet Overview for Hermes kanban state. It is intentionally observational: it reads local kanban SQLite data and presents the supported Hermes agent roster without task mutation controls.
 
-The implementation, documentation, deterministic stale-task regression, startup path, API smoke checks, and read-only boundary have now been validated in `C:/Users/rvanb/Projects/orbital`. The repository has no commits yet; human Git staging, commit, remote configuration, and push remain explicitly outside agent scope.
+The implementation, documentation, deterministic stale-task regression, startup path, API smoke checks, and read-only boundary have now been validated in `C:/Users/rvanb/Projects/orbital`. The authoritative MVP is present in Git; the v0.1.0 release-polish changes remain uncommitted so a human can review, stage, commit, configure the intended remote, and push under human control.
 
 ## Validation status from release-readiness checks
 
 Verified against the durable Orbital source:
 
 - `python server.py --port 8766` serves the app when run from the accessible source directory.
-- `GET /`, `GET /api/fleet`, `GET /api/snapshot`, and supported agent detail endpoints return HTTP 200 in probe checks.
+- `GET /`, `GET /api/fleet`, `GET /api/snapshot`, and supported agent detail endpoints return HTTP 200 in startup/API checks.
 - The four supported agents are Odin, Bao, Brokkr, and Veritas.
 - `/api/fleet` reports `read_only: true`.
 - `POST`, `PUT`, `PATCH`, and `DELETE` requests to `/api/fleet` return HTTP 501.

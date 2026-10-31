@@ -1,8 +1,8 @@
-# Orbital
+# Orbital v0.1.0
 
-Orbital is a local, read-only Fleet Overview for the Hermes Lean Agent Team. It gives a browser view of the current Hermes kanban database so a human can inspect agent state, current work, recent requests, and basic system indicators without changing the underlying task board.
+Orbital is the local, read-only observation surface for the Hermes Lean Agent Team. Hermes remains the system that runs agents and owns kanban state; Orbital is a companion viewer that reads that state so a human can inspect agent status, current work, recent requests, and basic system indicators.
 
-This repository currently contains the implemented read-only MVP only. It is not an orchestration console and it does not provide task editing, assignment, approval, replay, n8n control, analytics, authentication, or multi-user/remote deployment features.
+**v0.1.0 is an early, locally validated MVP.** It is useful for inspecting a local Hermes kanban database, but it is not an orchestration console or a production operations platform.
 
 ## Current MVP scope
 
@@ -36,6 +36,10 @@ It reads the Hermes kanban SQLite database using SQLite read-only mode. The appl
 
 HTTP write methods (`POST`, `PUT`, `PATCH`, and `DELETE`) return `501 Orbital is read-only`.
 
+## Architecture and data sources
+
+`server.py` is a standard-library HTTP server and SQLite adapter. `index.html` is the static browser UI. The read model queries the local Hermes SQLite tables `tasks`, `task_links`, `task_runs`, and `task_events` when they exist. Optional columns and missing tables are handled defensively; no production fixture data is injected. The UI polls the read APIs every 15 seconds, but it remains a point-in-time view of whatever the selected database contains.
+
 ## Requirements
 
 - Python 3.11 or newer.
@@ -58,9 +62,13 @@ By default Orbital reads:
 
     ~/AppData/Local/hermes/kanban.db
 
-To inspect another Hermes kanban database, set `HERMES_KANBAN_DB` before starting the server:
+To inspect another Hermes kanban database, set `HERMES_KANBAN_DB` before starting the server. In a POSIX shell:
 
     HERMES_KANBAN_DB=C:/path/to/kanban.db python server.py --port 8766
+
+In Windows Command Prompt:
+
+    set HERMES_KANBAN_DB=C:\path\to\kanban.db && python server.py --port 8766
 
 ## API endpoints
 
@@ -79,7 +87,7 @@ Orbital reads only local Hermes kanban data from SQLite tables when they exist:
 - `task_runs` for recent run metadata associated with tasks;
 - `task_events` for recent activity shown in the Latest Requests area.
 
-The server selects only columns that exist in the database, so older or partial schemas degrade rather than crashing when optional columns are missing.
+The server selects only columns that exist in the database, so older or partial schemas degrade rather than crashing when optional columns are missing. `current_task` is derived from the newest task in an active status, not simply the newest row. Completed-only history remains historical, while `current_task` is `null` for an idle agent. Assignment counts distinguish current and historical work; project context comes from Hermes project fields; dependency direction comes from `task_links.parent_id` → `child_id`.
 
 ## Missing, stale, or unavailable data
 
@@ -92,8 +100,7 @@ Orbital must be truthful when telemetry is incomplete:
 - Dependencies preserve the authoritative parent-to-child direction and are scoped to links touching that agent's assignment IDs; missing links produce no fabricated relationship.
 - Completed or stale historical tasks are not promoted to `current_task` just because they are the most recent rows.
 - If an agent has assignments but none are current, the agent may appear idle while still showing assignment history/counts.
-- Cost/token metrics and n8n status are currently shown as unavailable/not connected; Orbital does not invent operational metrics.
-- Browser data refreshes periodically, but the source is still a local point-in-time SQLite read. If Hermes is not writing to that database, the UI will remain stale until the database changes.
+- Cost/token metrics and n8n status are unavailable/not connected in v0.1.0. Orbital does not estimate or fabricate them. A missing database, missing table, failed query, or stale Hermes writer produces empty or unavailable states instead of invented activity.
 
 ## Verify
 
@@ -113,7 +120,7 @@ If this directory is a valid Git worktree, also run:
 
     git diff --check
 
-## Current limitations
+## Limitations
 
 - Local-only, loopback server; not hardened for internet-facing use.
 - No authentication or multi-user access control.
@@ -122,6 +129,5 @@ If this directory is a valid Git worktree, also run:
 - No historical replay, advanced analytics, alerting, or multi-instance federation.
 - The current UI is a compact MVP, not a complete operations platform.
 - Runtime truthfulness depends on the selected Hermes kanban database being present and current.
-- This source snapshot may be used as a reconstructed MVP probe if the original implementation workspace is unavailable; validate the actual release repository before publishing or committing a release.
 
-See `docs/architecture.md` for implementation boundaries and `docs/project-status.md` for the current release-readiness handoff.
+See `CHANGELOG.md` for the v0.1.0 release scope and `docs/architecture.md` for implementation boundaries.
