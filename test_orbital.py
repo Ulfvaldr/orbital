@@ -110,4 +110,35 @@ class OrbitalReadOnlyTests(unittest.TestCase):
             self.assertEqual(len(data["agents"]), 4); self.assertEqual(data["agents"][0]["assignment_count"], 0); self.assertEqual(data["agents"][0]["source_status"], "unavailable")
         finally: os.environ["HERMES_KANBAN_DB"] = old
 
+
+
+class OrbitalHeartbeatTests(unittest.TestCase):
+
+    def test_heartbeat_freshness(self):
+        import time
+        import server
+
+        now = int(time.time())
+
+        cases = [
+            ("fresh", "running", now - 30),
+            ("stale", "running", now - 600),
+            ("unavailable", "running", None),
+            ("not_applicable", "completed", now - 600),
+        ]
+
+        for expected, status, heartbeat in cases:
+            with self.subTest(expected=expected):
+                task = {"id": "heartbeat-test", "status": status}
+
+                if heartbeat is not None:
+                    task["last_heartbeat_at"] = heartbeat
+
+                result = server._activity_metadata([task], [])
+
+                self.assertEqual(
+                    result["heartbeat_status"],
+                    expected
+                )
+
 if __name__ == "__main__": unittest.main(verbosity=2)

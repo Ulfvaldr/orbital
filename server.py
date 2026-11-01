@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import sqlite3
+import time
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 AGENTS = ["Odin", "Bao", "Brokkr", "Veritas"]
@@ -28,7 +29,7 @@ def rows(table, limit=5000):
         names = {row[1] for row in db.execute(f"pragma table_info({table})")}
         wanted = [name for name in (
             "id", "title", "body", "status", "assignee", "project", "project_id", "team", "priority",
-            "created_at", "updated_at", "started_at", "completed_at", "last_heartbeat_at",
+            "created_at", "updated_at", "started_at", "completed_at", "ended_at", "last_heartbeat_at",
             "outcome", "summary", "error", "run_id", "task_id", "event_type", "kind",
             "payload", "source_task_id", "target_task_id", "link_type", "parent_id", "child_id",
         ) if name in names]
@@ -67,6 +68,93 @@ def _link_view(link, task_ids):
     if not parent or not child or (str(parent).lower() not in task_ids and str(child).lower() not in task_ids): return None
     return {"id": link.get("id"), "parent_task_id": parent, "child_task_id": child, "direction": "parent_to_child", "link_type": link.get("link_type") or "dependency"}
 
+
+# Monitoring metadata only. Does not alter task state.
+HEARTBEAT_STALE_SECONDS = 120
+
+def _unix_time(value):
+    """Accept Hermes Unix-second timestamps; reject invalid values."""
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+        if not (0 < number < 32503680000):
+            return None
+        return number
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+def _latest_timestamp(values):
+    valid = [_unix_time(value) for value in values]
+    valid = [value for value in valid if value is not None]
+    return int(max(valid)) if valid else None
+
+def _activity_metadata(assignments, runs):
+    """Derive observation metadata without claiming agent liveness."""
+    task_ids = {
+        str(task.get("id", "")).lower()
+        for task in assignments
+    }
+    related_runs = [
+        run for run in runs
+        if str(run.get("task_id", "")).lower() in task_ids
+    ]
+
+    activity = []
+    for task in assignments:
+        activity.extend(task.get(key) for key in (
+            "created_at", "updated_at", "started_at",
+            "completed_at", "last_heartbeat_at"
+        ))
+    for run in related_runs:
+        activity.extend(run.get(key) for key in (
+            "started_at", "ended_at", "last_heartbeat_at"
+        ))
+
+    active_tasks = [
+        task for task in assignments
+        if _status(task) in RUNNING
+    ]
+    active_ids = {
+        str(task.get("id", "")).lower()
+        for task in active_tasks
+    }
+
+    heartbeat_values = [
+        task.get("last_heartbeat_at") for task in active_tasks
+    ]
+    heartbeat_values.extend(
+        run.get("last_heartbeat_at")
+        for run in related_runs
+        if str(run.get("task_id", "")).lower() in active_ids
+    )
+
+    heartbeat = _latest_timestamp(heartbeat_values)
+    last_activity = _latest_timestamp(activity)
+
+    if not active_tasks:
+        heartbeat_status = "not_applicable"
+        heartbeat_age = None
+        heartbeat = None
+    elif heartbeat is None:
+        heartbeat_status = "unavailable"
+        heartbeat_age = None
+    else:
+        heartbeat_age = max(0, int(time.time() - heartbeat))
+        heartbeat_status = (
+            "fresh"
+            if heartbeat <= time.time()
+            and heartbeat_age <= HEARTBEAT_STALE_SECONDS
+            else "stale"
+        )
+
+    return {
+        "last_heartbeat_at": heartbeat,
+        "heartbeat_age_seconds": heartbeat_age,
+        "heartbeat_status": heartbeat_status,
+        "last_activity_at": last_activity,
+    }
+
 def model():
     tasks, runs, links = rows("tasks"), rows("task_runs"), rows("task_links")
     parent_by_child = {str(link.get("child_id")): link.get("parent_id") for link in links if link.get("child_id") and link.get("parent_id")}
@@ -89,6 +177,7 @@ def model():
         result.append({"name": name, "role": ROLES[name], "state": state, "color": COLORS[name], "assignments": assignments_view,
             "assignment_count": len(current_assignments), "total_assignment_count": len(assignments), "current_assignment_count": len(current_assignments), "historical_assignment_count": len(assignments)-len(current_assignments),
             "current_assignments": [x for x in assignments_view if x["assignment_class"] == "current"], "historical_assignments": [x for x in assignments_view if x["assignment_class"] == "historical"],
+            **_activity_metadata(assignments, runs),
             "current_task": current, "latest_run": latest, "dependencies": [x for x in deps if x is not None], "telemetry": "local kanban.db (read-only)", "source_status": "available" if os.path.exists(db_path()) else "unavailable"})
     return result
 
