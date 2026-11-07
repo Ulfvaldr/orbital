@@ -1,10 +1,11 @@
 """Read-only Orbital Fleet Overview server (Python standard library only)."""
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, parse_qs, unquote
 import argparse
 import json
 import os
 import sqlite3
+from usage import usage_payload
 import time
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -181,8 +182,10 @@ def model():
             "current_task": current, "latest_run": latest, "dependencies": [x for x in deps if x is not None], "telemetry": "local kanban.db (read-only)", "source_status": "available" if os.path.exists(db_path()) else "unavailable"})
     return result
 
-def payload(path):
+def payload(path, period="all"):
     fleet = model()
+    if path == "/api/usage":
+        return usage_payload(period=period)
     if path == "/api/fleet":
         return {"agents": fleet, "read_only": True, "source": db_path()}
     if path == "/api/snapshot":
@@ -202,7 +205,14 @@ def payload(path):
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
-        data = payload(path)
+        if path == "/api/usage":
+            period = parse_qs(urlparse(self.path).query).get("range", ["all"])[0]
+            if period not in ("today", "7d", "30d", "all"):
+                self.send_error(400, "Invalid usage range")
+                return
+            data = payload(path, period=period)
+        else:
+            data = payload(path)
         if data is not None:
             raw = json.dumps(data, default=str).encode("utf-8")
             self.send_response(200)
@@ -210,7 +220,7 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(raw)))
             self.end_headers(); self.wfile.write(raw); return
-        if path in ("/", "/index.html"): return super().do_GET()
+        if path in ("/", "/index.html", "/stats.html"): return super().do_GET()
         self.send_error(404)
     def do_POST(self): self.send_error(501, "Orbital is read-only")
     do_PUT = do_POST; do_PATCH = do_POST; do_DELETE = do_POST

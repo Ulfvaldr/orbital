@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbital - Fleet Stats</title>
+<style>
+:root {
+  color-scheme:dark;
+  --bg:#081018;--panel:#101c27;--line:#223544;
+  --text:#e8f0f5;--muted:#8da2b2;
+  --teal:#55d6be;--yellow:#f2c14e;--blue:#60a5fa
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:14px system-ui,Segoe UI,sans-serif}
+header{display:flex;align-items:center;gap:24px;
+  padding:20px 25px;border-bottom:1px solid var(--line)}
+.brand{color:var(--yellow);font-weight:800;letter-spacing:.18em}
+a{color:var(--teal);text-decoration:none}
+main{max-width:1350px;margin:auto;padding:25px}
+h1{margin:0 0 6px;font-size:27px}
+h2{font-size:17px;margin:0 0 18px}
+.muted{color:var(--muted);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card,.panel{background:var(--panel);border:1px solid var(--line);
+  border-radius:9px;padding:20px}
+.card .value{font-size:27px;color:var(--teal);font-weight:700;
+  margin-top:10px;overflow-wrap:anywhere}
+.charts{display:grid;grid-template-columns:1fr 1fr;
+  gap:16px;margin-top:20px}
+.chart-row{margin:18px 0}
+.chart-head{display:flex;justify-content:space-between;
+  gap:8px;font-size:12px;margin-bottom:7px}
+.track{height:13px;background:#203240;border-radius:8px;
+  overflow:hidden}
+.fill{height:100%;background:var(--teal);border-radius:8px}
+.fill.cost{background:var(--yellow)}
+.fill.output{background:var(--blue)}
+.legend{display:flex;gap:16px;margin-top:15px;font-size:12px}
+.dot{display:inline-block;width:9px;height:9px;
+  margin-right:6px;border-radius:50%}
+table{border-collapse:collapse;width:100%;font-size:13px;
+  white-space:nowrap}
+th,td{padding:13px;border-bottom:1px solid var(--line);
+  text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);cursor:pointer;user-select:none}
+th:hover{color:var(--teal)}
+.table-wrap{overflow:auto}
+.toolbar{display:flex;justify-content:space-between;
+  align-items:center;gap:12px;margin:20px 0}
+button{background:#142a36;color:var(--text);
+  border:1px solid var(--line);border-radius:6px;
+  padding:9px 15px;cursor:pointer}
+button:hover{border-color:var(--teal)}
+select{background:#142a36;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:9px 12px}
+.note{margin-top:18px;line-height:1.6}
+.filter-group{display:flex;flex-wrap:wrap;gap:5px}
+.period.active{border-color:var(--teal);color:var(--teal);background:#153632}
+.toolbar{flex-wrap:wrap}
+
+/* Compact perspective chart: SVG geometry, no external chart libraries. */
+.model-viz-toolbar{display:flex;gap:16px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:12px 0}
+.viz-metric.active{border-color:var(--teal);background:#153632;color:var(--teal)}
+.viz-frame{border:1px solid #294052;border-radius:12px;padding:16px;background:radial-gradient(ellipse at 52% 20%,#1a3242 0%,#0b1721 70%);overflow:hidden}
+.model-viz{width:100%;min-height:260px;overflow-x:auto}
+.model-viz svg{display:block;width:100%;height:auto;min-width:550px}
+.model-viz .prism{cursor:default;outline:none}
+.model-viz .prism:focus .front,.model-viz .prism:hover .front{filter:brightness(1.32)}
+.model-viz .axis-text{fill:#a3b8c8;font-size:11px}
+.model-viz .model-name{fill:#e8f0f5;font-size:11px;font-weight:600}
+.model-viz .bar-value{fill:#fff;font-size:11px;font-weight:700}
+.records-details{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
+.records-details summary{cursor:pointer;padding:8px 0;color:var(--teal);font-weight:600}
+.records-details .table-wrap{margin-top:12px}
+#vizMessage{margin:8px 0 0}
+
+
+/* Fleet intelligence visualizations: local SVG, no dependencies. */
+.fleet-viz-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.fleet-viz-toolbar h2{margin:0}
+.fleet-viz-buttons{display:flex;gap:5px;flex-wrap:wrap}
+.fleet-viz-buttons .active{color:var(--teal);background:#153632;border-color:var(--teal)}
+.fleet-viz-frame{min-height:270px;border-radius:10px;background:radial-gradient(ellipse at 50% 12%,#1b3342,#0c1822 75%);border:1px solid #263d4f;overflow-x:auto}
+.fleet-viz-frame svg{display:block;width:100%;min-width:380px;height:auto}
+.fleet-viz-hint{margin-top:10px}
+.billing-legend{display:grid;gap:10px;margin-top:12px}
+.billing-line{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px}
+.billing-line .left{display:flex;gap:8px;align-items:center}
+.billing-line .swatch{height:10px;width:10px;border-radius:3px;display:inline-block}
+.billing-viz-frame{min-height:240px;display:grid;place-items:center}
+.billing-viz-frame svg{height:230px;width:min(100%,330px)}
+@media(max-width:520px){.fleet-viz-buttons button{padding:7px 8px;font-size:12px}}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .charts{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+  .grid{grid-template-columns:1fr 1fr}
+  main{padding:12px}.card,.panel{padding:13px}
+  header{padding:15px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">ORBITAL</div>
+  <a href="/">Fleet Overview</a>
+  <a href="/stats.html" aria-current="page">Stats</a>
+</header>
+
+<main>
+  <h1>Fleet Usage Intelligence</h1>
+  <p class="muted">Recorded Hermes usage · <span id="periodLabel">All Time</span> · Read-only</p>
+
+  <div class="toolbar">
+    <span class="muted" id="status" role="status">
+      Loading usage data...
+    </span>
+    <div class="filter-group" aria-label="Usage reporting period">
+      <button class="period active" data-period="today">Today</button>
+      <button class="period" data-period="7d">7 Days</button>
+      <button class="period" data-period="30d">30 Days</button>
+      <button class="period" data-period="all">All Time</button>
+    </div>
+    <button onclick="load()">Refresh data</button>
+  </div>
+
+  <section class="grid">
+    <div class="card">
+      <div class="muted">Input tokens</div>
+      <div class="value" id="inputs">—</div>
+    </div>
+    <div class="card">
+      <div class="muted">Output tokens</div>
+      <div class="value" id="outputs">—</div>
+    </div>
+    <div class="card">
+      <div class="muted">Estimated cost (USD)</div>
+      <div class="value" id="cost">—</div>
+    </div>
+    <div class="card">
+      <div class="muted">Usage records</div>
+      <div class="value" id="records">—</div>
+    </div>
+  </section>
+
+  <section class="charts" aria-label="Fleet visual analytics">
+    <div class="panel">
+      <div class="fleet-viz-toolbar">
+        <h2>Agent performance footprint</h2>
+        <div class="fleet-viz-buttons" role="group" aria-label="Agent comparison metric">
+          <button type="button" class="fleet-metric active" data-fleet-metric="api_calls" aria-pressed="true">API calls</button>
+          <button type="button" class="fleet-metric" data-fleet-metric="input_tokens" aria-pressed="false">Input</button>
+          <button type="button" class="fleet-metric" data-fleet-metric="output_tokens" aria-pressed="false">Output</button>
+          <button type="button" class="fleet-metric" data-fleet-metric="estimated_cost_usd" aria-pressed="false">Est. cost</button>
+        </div>
+      </div>
+      <div class="fleet-viz-frame" id="fleetViz" role="img" aria-label="Agent usage comparison chart"></div>
+      <p class="muted fleet-viz-hint">3D-style comparison of recorded usage. Bar height shows the selected metric, not task success or productivity.</p>
+    </div>
+    <div class="panel">
+      <h2>Billing classification coverage</h2>
+      <div id="billingViz" class="billing-viz-frame" role="img" aria-label="Usage records by billing classification"></div>
+      <div class="billing-legend" id="billingLegend"></div>
+      <p class="muted fleet-viz-hint">Record counts, not dollars. Unclassified means the billing status is unknown; included does not mean the subscription was free.</p>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <h2>Agent usage breakdown</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="agent">Agent</th>
+            <th data-sort="usage_records">Records</th>
+            <th data-sort="api_calls">API calls</th>
+            <th data-sort="input_tokens">Input</th>
+            <th data-sort="output_tokens">Output</th>
+            <th data-sort="cache_read_tokens">Cache read</th>
+            <th data-sort="estimated_cost_usd">Est. USD</th>
+            <th data-sort="included_records">Included</th>
+            <th data-sort="unclassified_records">Unclassified</th>
+          </tr>
+        </thead>
+        <tbody id="usageRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <h2>Model and provider breakdown</h2>
+    <p class="muted">Uses the selected reporting period. Estimated USD excludes subscription-included and unclassified records.</p>
+    <div class="toolbar">
+      <label for="modelAgent">Agent</label>
+      <select id="modelAgent" aria-label="Filter models by agent">
+        <option value="all">All agents</option>
+        <option value="odin">Odin</option>
+        <option value="bao">Bao</option>
+        <option value="brokkr">Brokkr</option>
+        <option value="veritas">Veritas</option>
+      </select>
+    </div>
+    <div class="model-viz-toolbar">
+      <div class="filter-group" role="group" aria-label="Model chart metric">
+        <button type="button" class="viz-metric active" data-metric="estimated_cost_usd" aria-pressed="true">Estimated cost</button>
+        <button type="button" class="viz-metric" data-metric="input_tokens" aria-pressed="false">Input tokens</button>
+        <button type="button" class="viz-metric" data-metric="output_tokens" aria-pressed="false">Output tokens</button>
+        <button type="button" class="viz-metric" data-metric="api_calls" aria-pressed="false">API calls</button>
+      </div>
+      <span class="muted">3D-style perspective · hover or focus bars for details</span>
+    </div>
+    <div class="viz-frame">
+      <div id="modelViz" class="model-viz" role="img" aria-label="Model usage visualisation"></div>
+      <p id="vizMessage" class="muted"></p>
+    </div>
+    <details class="records-details">
+      <summary>Detailed model records <span class="muted">(exact values and billing classifications)</span></summary>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Agent</th><th>Model</th><th>Provider</th><th>Billing mode</th>
+          <th>Records</th><th>API calls</th><th>Input</th><th>Output</th>
+          <th>Cache read</th><th>Cache write</th><th>Reasoning</th>
+          <th>Est. USD</th><th>Estimated</th><th>Included</th><th>Unclassified</th>
+        </tr></thead>
+        <tbody id="modelRows"></tbody>
+      </table>
+    </div>
+    </details>
+    <p class="muted" id="modelCoverage" aria-live="polite"></p>
+  </section>
+
+  <p class="muted" id="coverage" aria-live="polite"></p>
+  <p class="muted note">
+    Estimated cost is not verified provider spending.
+    Subscription-included usage and unclassified records are
+    excluded from estimated-cost totals. Token categories may
+    overlap and are not added together. Data reflects available
+    Hermes records matching the selected period; not a billing statement.
+  </p>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>n==null?'N/A':Number(n).toLocaleString();
+const usd=n=>n==null?'N/A':
+  '$'+Number(n).toLocaleString('en-US',{
+    minimumFractionDigits:2,maximumFractionDigits:4
+  });
+
+let agents=[];
+let models=[];
+let chartMetric='estimated_cost_usd';
+let fleetMetric='api_calls';
+let selectedPeriod='all';
+const periodLabels={today:'Today', '7d':'Last 7 Days', '30d':'Last 30 Days', all:'All Time'};
+let requestId=0;
+let sortKey='agent';
+let descending=false;
+
+function bar(label,value,max,kind,display){
+  const pct=max>0?100*value/max:0;
+  const row=document.createElement('div');
+  row.className='chart-row';
+
+  const head=document.createElement('div');
+  head.className='chart-head';
+  const name=document.createElement('span');
+  name.textContent=label;
+  const number=document.createElement('span');
+  number.textContent=display;
+
+  head.append(name,number);
+
+  const track=document.createElement('div');
+  track.className='track';
+  const fill=document.createElement('div');
+  fill.className='fill '+kind;
+  fill.style.width=pct+'%';
+  track.append(fill);
+  row.append(head,track);
+  return row;
+}
+
+
+function svgNode(tag,attrs={},text){
+  const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
+  for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));
+  if(text!==undefined)el.textContent=text;
+  return el;
+}
+function renderModelChart(records){
+  const root=$('modelViz');root.replaceChildren();
+  const groups=new Map();
+  for(const m of records){
+    const key=m.agent+'|'+m.model;
+    if(!groups.has(key))groups.set(key,{agent:m.agent,model:m.model,records:0,api_calls:0,input_tokens:0,output_tokens:0,estimated_cost_usd:0,estimated_records:0,included_records:0,unclassified_records:0});
+    const g=groups.get(key);
+    for(const col of ['usage_records','api_calls','input_tokens','output_tokens','estimated_cost_usd','estimated_records','included_records','unclassified_records']){
+      const target=col==='usage_records'?'records':col;
+      g[target]+=Number(m[col]||0);
+    }
+  }
+  const values=[...groups.values()].sort((a,b)=>b[chartMetric]-a[chartMetric]);
+  const top=values.slice(0,12);
+  const beyond=values.length-top.length;
+  const metricLabel={estimated_cost_usd:'estimated cost (USD)',input_tokens:'input tokens',output_tokens:'output tokens',api_calls:'API calls'}[chartMetric];
+  const note=$('vizMessage');
+  if(!values.length){note.textContent='No model usage for this agent and period.';return;}
+  note.textContent=(beyond?`Showing top 12 of ${values.length} agent/model groups. `:'')+
+    (chartMetric==='estimated_cost_usd'?'Only records classified as estimated contribute to cost. ':'')+
+    'Bars are proportional within the selected metric; perspective is decorative.';
+  const width=1100,height=356,base=248,plotTop=45;
+  const svg=svgNode('svg',{viewBox:`0 0 ${width} ${height}`,role:'img','aria-label':`Perspective bar chart of ${metricLabel} by agent and model`});
+  const defs=svgNode('defs');
+  const grad=svgNode('linearGradient',{id:'orbital-floor',x1:'0',x2:'0',y1:'0',y2:'1'});
+  grad.append(svgNode('stop',{offset:'0%','stop-color':'#1d3644'}),svgNode('stop',{offset:'100%','stop-color':'#0a1823'}));
+  defs.append(grad);svg.append(defs);
+  svg.append(svgNode('polygon',{points:`36,${base+4} 1068,${base+4} 1098,${base+34} 6,${base+34}`,fill:'url(#orbital-floor)',stroke:'#2a4556'}));
+  for(let i=0;i<=4;i++){
+    const y=base-(base-plotTop)*i/4;
+    svg.append(svgNode('line',{x1:35,y1:y,x2:1068,y2:y,stroke:'#274151','stroke-dasharray':i?'3 7':'none','stroke-width':'1'}));
+  }
+  const max=Math.max(...top.map(g=>g[chartMetric]),0);
+  const slot=1028/top.length;
+  const barW=Math.min(55,slot*.55),depth=12;
+  const colors=['#42cfb5','#71a8f5','#f1be58','#bd9cff'];
+  for(let i=0;i<top.length;i++){
+    const g=top[i],v=g[chartMetric],cx=42+(i+.5)*slot;
+    const h=max>0?(v/max)*171:0;
+    const x=cx-barW/2,y=base-h;
+    const color=colors[['odin','bao','brokkr','veritas'].indexOf(g.agent)]||colors[0];
+    const prism=svgNode('g',{class:'prism',tabindex:'0',role:'group','aria-label':`${g.agent} ${g.model}: ${chartMetric==='estimated_cost_usd'?usd(v):fmt(v)} ${metricLabel}`});
+    const tip=svgNode('title',{},`${g.agent} / ${g.model}\n${metricLabel}: ${chartMetric==='estimated_cost_usd'?usd(v):fmt(v)}\nRecords: ${fmt(g.records)} · Included: ${fmt(g.included_records)} · Unclassified: ${fmt(g.unclassified_records)}`);
+    prism.append(tip);
+    if(h>0){
+      prism.append(svgNode('polygon',{points:`${x+barW},${y} ${x+barW+depth},${y-depth} ${x+barW+depth},${base-depth} ${x+barW},${base}`,fill:color,opacity:'.48'}));
+      prism.append(svgNode('polygon',{points:`${x},${y} ${x+depth},${y-depth} ${x+barW+depth},${y-depth} ${x+barW},${y}`,fill:color,opacity:'.88'}));
+      prism.append(svgNode('rect',{class:'front',x,y,width:barW,height:h,fill:color,opacity:'.82',rx:'2'}));
+    }else{
+      prism.append(svgNode('rect',{x,y:base-2,width:barW,height:2,fill:'#526575'}));
+    }
+    const display=chartMetric==='estimated_cost_usd'?usd(v):v>=1e6?(v/1e6).toFixed(2)+'M':v>=1000?(v/1000).toFixed(1)+'K':fmt(v);
+    prism.append(svgNode('text',{x:cx,y:Math.max(22,y-20),'text-anchor':'middle',class:'bar-value'},display));
+    const short=g.model.length>19?g.model.slice(0,17)+'…':g.model;
+    prism.append(svgNode('text',{x:cx,y:base+54,'text-anchor':'middle',class:'model-name'},short));
+    prism.append(svgNode('text',{x:cx,y:base+72,'text-anchor':'middle',class:'axis-text'},g.agent));
+    svg.append(prism);
+  }
+  root.append(svg);
+}
+
+function renderModels(){
+  const agent=$('modelAgent').value;
+  const filtered=models.filter(m=>agent==='all'||m.agent===agent);
+  const tbody=$('modelRows');
+  tbody.replaceChildren();
+  const keys=['agent','model','provider','billing_mode','usage_records',
+    'api_calls','input_tokens','output_tokens','cache_read_tokens',
+    'cache_write_tokens','reasoning_tokens','estimated_cost_usd',
+    'estimated_records','included_records','unclassified_records'];
+  const numeric=new Set(keys.slice(4));
+  for(const m of filtered){
+    const tr=document.createElement('tr');
+    for(const k of keys){
+      const td=document.createElement('td');
+      td.textContent=k==='estimated_cost_usd'?
+        (Number(m.estimated_records)>0?usd(m[k]):'N/A'):
+        (numeric.has(k)?fmt(m[k]):String(m[k]??'Unknown'));
+      tr.append(td);
+    }
+    tbody.append(tr);
+  }
+  $('modelCoverage').textContent=filtered.length+' model/provider/billing-mode groups';
+  renderModelChart(filtered);
+  if(!filtered.length){
+    const tr=document.createElement('tr');
+    const td=document.createElement('td');
+    td.colSpan=keys.length;td.textContent='No model usage for this period or agent';
+    tr.append(td);tbody.append(tr);
+  }
+}
+
+function renderFleetChart(available){
+  const root=$('fleetViz');root.replaceChildren();
+  const W=660,H=322,base=247;
+  const svg=svgNode('svg',{viewBox:`0 0 ${W} ${H}`,role:'img',
+    'aria-label':'Agent comparison of '+fleetMetric.replace(/_/g,' ')});
+  const max=Math.max(0,...available.map(a=>Number(a[fleetMetric]||0)));
+  const colors={odin:'#42cfb5',bao:'#5e9cf2',brokkr:'#f2c14e',veritas:'#b99af9'};
+  svg.append(svgNode('polygon',{points:'31,249 610,249 652,282 5,282',fill:'#142e3c',stroke:'#315468'}));
+  for(let i=0;i<=4;i++){
+    const y=base-i*43;
+    svg.append(svgNode('line',{x1:31,y1:y,x2:610,y2:y,stroke:'#2a4556','stroke-dasharray':i?'3 7':'none'}));
+  }
+  if(!available.length){
+    svg.append(svgNode('text',{x:W/2,y:145,'text-anchor':'middle',fill:'#a3b8c8'},'No available usage data'));
+  }
+  const points=['odin','bao','brokkr','veritas'];
+  points.forEach((agent,i)=>{
+    const a=available.find(a=>a.agent===agent);
+    const value=a?Number(a[fleetMetric]||0):0;
+    const h=max>0?value/max*167:0;
+    const x=72+i*144,barW=65,depth=14,y=base-h,color=colors[agent];
+    const group=svgNode('g',{tabindex:'0',role:'group','aria-label':`${agent}, ${fleetMetric.replace(/_/g,' ')}: ${fleetMetric==='estimated_cost_usd'?(a&&a.estimated_records?usd(value):'not estimated'):fmt(a?value:null)}`});
+    group.append(svgNode('title',{},`${agent}\n${fleetMetric.replace(/_/g,' ')}: ${a?(fleetMetric==='estimated_cost_usd'?(a.estimated_records?usd(value):'N/A'):fmt(value)):'Unavailable'}`));
+    if(a&&h>0){
+      group.append(svgNode('polygon',{points:`${x+barW},${y} ${x+barW+depth},${y-depth} ${x+barW+depth},${base-depth} ${x+barW},${base}`,fill:color,opacity:'.5'}));
+      group.append(svgNode('polygon',{points:`${x},${y} ${x+depth},${y-depth} ${x+barW+depth},${y-depth} ${x+barW},${y}`,fill:color,opacity:'.94'}));
+      group.append(svgNode('rect',{x,y,width:barW,height:h,fill:color,opacity:'.83',rx:3}));
+    }else if(a){group.append(svgNode('rect',{x,y:base-2,width:barW,height:2,fill:color}));}
+    let vlabel='N/A';
+    if(a){vlabel=fleetMetric==='estimated_cost_usd'?(Number(a.estimated_records)>0?usd(value):'N/A'):
+      value>=1e6?(value/1e6).toFixed(1)+'M':value>=1000?(value/1000).toFixed(1)+'K':fmt(value);}
+    group.append(svgNode('text',{x:x+barW/2,y:Math.max(31,y-23),'text-anchor':'middle',fill:'#eaf5fb','font-size':13,'font-weight':700},vlabel));
+    group.append(svgNode('text',{x:x+barW/2,y:base+57,'text-anchor':'middle',fill:'#eaf5fb','font-size':14,'font-weight':600},agent));
+    svg.append(group);
+  });
+  root.append(svg);
+}
+
+function renderBillingChart(available){
+  const root=$('billingViz');root.replaceChildren();
+  const legend=$('billingLegend');legend.replaceChildren();
+  const fields=[
+    ['Estimated','estimated_records','#f2c14e'],
+    ['Subscription-included','included_records','#42cfb5'],
+    ['Unclassified','unclassified_records','#b99af9']
+  ];
+  const counts=fields.map(([label,key,color])=>({label,color,value:available.reduce((n,a)=>n+Number(a[key]||0),0)}));
+  const total=counts.reduce((n,x)=>n+x.value,0);
+  const svg=svgNode('svg',{viewBox:'0 0 300 240',role:'img','aria-label':'Billing classification of '+fmt(total)+' usage records'});
+  const cx=150,cy=120,r=82,stroke=27,circ=2*Math.PI*r;
+  svg.append(svgNode('circle',{cx,cy,r,fill:'none',stroke:'#213542','stroke-width':stroke}));
+  let offset=0;
+  counts.forEach(x=>{
+    if(total&&x.value){
+      const length=circ*(x.value/total);
+      const arc=svgNode('circle',{cx,cy,r,fill:'none',stroke:x.color,'stroke-width':stroke,
+        'stroke-dasharray':`${Math.max(0,length-2)} ${circ}`,'stroke-dashoffset':-offset,
+        transform:`rotate(-90 ${cx} ${cy})`});
+      arc.append(svgNode('title',{},`${x.label}: ${fmt(x.value)} records`));
+      svg.append(arc);offset+=length;
+    }
+    const line=document.createElement('div');line.className='billing-line';
+    const left=document.createElement('span');left.className='left';
+    const swatch=document.createElement('i');swatch.className='swatch';swatch.style.background=x.color;
+    const name=document.createElement('span');name.textContent=x.label;
+    left.append(swatch,name);
+    const count=document.createElement('strong');count.textContent=`${fmt(x.value)} (${total?(x.value/total*100).toFixed(1):'0.0'}%)`;
+    line.append(left,count);legend.append(line);
+  });
+  svg.append(svgNode('text',{x:cx,y:120,'text-anchor':'middle',fill:'#eaf5fb','font-size':29,'font-weight':700},fmt(total)));
+  svg.append(svgNode('text',{x:cx,y:143,'text-anchor':'middle',fill:'#9db2c2','font-size':12},'usage records'));
+  root.append(svg);
+}
+
+function render(){
+  const available=agents.filter(a=>a.source_status==='available');
+  const sum=k=>available.reduce((n,a)=>n+Number(a[k]||0),0);
+
+  $('inputs').textContent=available.length?fmt(sum('input_tokens')):'—';
+  $('outputs').textContent=available.length?fmt(sum('output_tokens')):'—';
+  $('records').textContent=available.length?fmt(sum('usage_records')):'—';
+
+  const estimated=available.filter(a=>Number(a.estimated_records)>0);
+  $('cost').textContent=estimated.length?
+    usd(estimated.reduce((n,a)=>n+Number(a.estimated_cost_usd||0),0)):
+    'Unavailable';
+
+  renderFleetChart(available);
+  renderBillingChart(available);
+
+  const sorted=[...agents].sort((a,b)=>{
+    const x=a[sortKey],y=b[sortKey];
+    let order;
+    if(x==null&&y==null)order=0;
+    else if(x==null)order=1;
+    else if(y==null)order=-1;
+    else if(sortKey==='agent')order=String(x).localeCompare(String(y));
+    else order=Number(x)-Number(y);
+    return descending?-order:order;
+  });
+
+  const tbody=$('usageRows');
+  tbody.replaceChildren();
+  const cols=[
+    'agent','usage_records','api_calls','input_tokens',
+    'output_tokens','cache_read_tokens','estimated_cost_usd',
+    'included_records','unclassified_records'
+  ];
+
+  for(const a of sorted){
+    const tr=document.createElement('tr');
+    for(const key of cols){
+      const td=document.createElement('td');
+      td.textContent=key==='estimated_cost_usd'?
+        (Number(a.estimated_records)>0?usd(a[key]):'N/A'):
+        key==='agent'?a.agent:fmt(a[key]);
+      tr.append(td);
+    }
+    tbody.append(tr);
+  }
+  renderModels();
+}
+
+async function load(){
+  try{
+    const request=++requestId;
+    const response=await fetch('/api/usage?range='+encodeURIComponent(selectedPeriod),{cache:'no-store'});
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    const data=await response.json();
+    if(!Array.isArray(data.agents))throw new Error('Invalid API response');
+    if(request!==requestId)return;
+    agents=data.agents;
+    models=Array.isArray(data.models)?data.models:[];
+    render();
+    const excluded=agents.reduce((n,a)=>n+Number(a.excluded_undated_records||0),0);
+    $('coverage').textContent=selectedPeriod==='all'?'All recorded sessions included regardless of timestamp':
+      excluded+' records excluded due to missing or invalid timestamps; period based on last activity';
+    $('status').textContent='Updated '+new Date().toLocaleTimeString()+
+      ' · '+agents.filter(a=>a.source_status==='available').length+
+      '/4 sources available';
+  }catch(error){
+    if(typeof request!=='undefined'&&request!==requestId)return;
+    $('status').textContent='Usage unavailable: '+error.message;
+    agents=[];models=[];
+    render();
+  }
+}
+
+document.querySelectorAll('button.fleet-metric').forEach(button=>{
+  button.addEventListener('click',()=>{
+    fleetMetric=button.dataset.fleetMetric;
+    document.querySelectorAll('button.fleet-metric').forEach(b=>{
+      b.classList.toggle('active',b===button);
+      b.setAttribute('aria-pressed',String(b===button));
+    });
+    renderFleetChart(agents.filter(a=>a.source_status==='available'));
+  });
+});
+$('modelAgent').addEventListener('change',renderModels);
+document.querySelectorAll('button.viz-metric').forEach(button=>{
+  button.addEventListener('click',()=>{
+    chartMetric=button.dataset.metric;
+    document.querySelectorAll('button.viz-metric').forEach(b=>{
+      b.classList.toggle('active',b===button);
+      b.setAttribute('aria-pressed',String(b===button));
+    });
+    renderModels();
+  });
+});
+
+document.querySelectorAll('button[data-period]').forEach(button=>{
+  button.addEventListener('click',()=>{
+    selectedPeriod=button.dataset.period;
+    document.querySelectorAll('button[data-period]').forEach(b=>{
+      b.classList.toggle('active',b===button);
+      b.setAttribute('aria-pressed',String(b===button));
+    });
+    $('periodLabel').textContent=periodLabels[selectedPeriod];
+    load();
+  });
+  button.setAttribute('aria-pressed',String(button.dataset.period===selectedPeriod));
+});
+
+document.querySelectorAll('th[data-sort]').forEach(th=>{
+  th.tabIndex=0;
+  th.setAttribute('role','button');
+  const activate=()=>{
+    const key=th.dataset.sort;
+    descending=sortKey===key?!descending:key!=='agent';
+    sortKey=key;
+    render();
+  };
+  th.addEventListener('click',activate);
+  th.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){
+      e.preventDefault();activate();
+    }
+  });
+});
+
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>
