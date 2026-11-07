@@ -6,6 +6,7 @@ import json
 import os
 import sqlite3
 from usage import usage_payload
+from operations import summarize_operations
 import time
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -182,8 +183,11 @@ def model():
             "current_task": current, "latest_run": latest, "dependencies": [x for x in deps if x is not None], "telemetry": "local kanban.db (read-only)", "source_status": "available" if os.path.exists(db_path()) else "unavailable"})
     return result
 
-def payload(path, period="all"):
+def payload(path, period="all", operations_days=14):
     fleet = model()
+    if path == "/api/operations":
+        available = os.path.isfile(db_path())
+        return summarize_operations(rows("tasks"), rows("task_runs"), days=operations_days, source_available=available)
     if path == "/api/usage":
         return usage_payload(period=period)
     if path == "/api/fleet":
@@ -205,7 +209,13 @@ def payload(path, period="all"):
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
-        if path == "/api/usage":
+        if path == "/api/operations":
+            value = parse_qs(urlparse(self.path).query).get("days", ["14"])[0]
+            if value not in ("7", "14", "30"):
+                self.send_error(400, "Invalid operations window")
+                return
+            data = payload(path, operations_days=int(value))
+        elif path == "/api/usage":
             period = parse_qs(urlparse(self.path).query).get("range", ["all"])[0]
             if period not in ("today", "7d", "30d", "all"):
                 self.send_error(400, "Invalid usage range")
@@ -220,7 +230,7 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(raw)))
             self.end_headers(); self.wfile.write(raw); return
-        if path in ("/", "/index.html", "/stats.html"): return super().do_GET()
+        if path in ("/", "/index.html", "/stats.html", "/operations.html"): return super().do_GET()
         self.send_error(404)
     def do_POST(self): self.send_error(501, "Orbital is read-only")
     do_PUT = do_POST; do_PATCH = do_POST; do_DELETE = do_POST
