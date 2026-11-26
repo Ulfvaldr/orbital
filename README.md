@@ -12,19 +12,19 @@ The following screenshots demonstrate Orbital running against recorded Hermes ag
 
 Live agent monitoring, task assignments, system indicators, and recent activity.
 
-![Orbital Fleet Overview](docs/screenshots/fleet-overview.png)
+<img src="docs/screenshots/fleet-overview.png" width="100%" alt="Fleet Overview">
 
 ### Usage Analytics
 
 Interactive token usage, estimated API costs, billing classification, and model/provider breakdowns.
 
-![Orbital Usage Analytics](docs/screenshots/usage-analytics.png)
+<img src="docs/screenshots/usage-analytics.png" width="100%" alt="Usage Analytics">
 
 ### Agent Operations
 
 Task outcome timelines, agent workload distribution, and completion metrics.
 
-![Orbital Agent Operations](docs/screenshots/agent-operations.png)
+<img src="docs/screenshots/agent-operations.png" width="100%" alt="Agent Operations">
 
 *Screenshots represent recorded development activity. Estimated costs are not authoritative billing totals.*
 
