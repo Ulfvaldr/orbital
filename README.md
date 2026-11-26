@@ -4,6 +4,32 @@ Orbital is the local, read-only observation surface for the Hermes Lean Agent Te
 
 **v0.2.0 is a locally validated, read-only AI agent observability dashboard.** It is useful for inspecting a local Hermes kanban database, but it is not an orchestration console or a production operations platform.
 
+## Dashboard Showcase
+
+The following screenshots demonstrate Orbital running against recorded Hermes agent data.
+
+### Fleet Overview
+
+Live agent monitoring, task assignments, system indicators, and recent activity.
+
+![Orbital Fleet Overview](docs/screenshots/fleet-overview.png)
+
+### Usage Analytics
+
+Interactive token usage, estimated API costs, billing classification, and model/provider breakdowns.
+
+![Orbital Usage Analytics](docs/screenshots/usage-analytics.png)
+
+### Agent Operations
+
+Task outcome timelines, agent workload distribution, and completion metrics.
+
+![Orbital Agent Operations](docs/screenshots/agent-operations.png)
+
+*Screenshots represent recorded development activity. Estimated costs are not authoritative billing totals.*
+
+---
+
 ## Current MVP scope
 
 The current release provides:
