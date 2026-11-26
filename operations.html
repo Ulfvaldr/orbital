@@ -17,7 +17,23 @@ header{border-bottom:1px solid var(--line);padding:20px 28px;display:flex;align-
 'use strict';
 let days=14;let requestId=0;
 const el=id=>document.getElementById(id);const fmt=n=>Number(n||0).toLocaleString();
-function node(tag,attrs={},text){const n=document.createElement(tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,String(v));if(text!==undefined)n.textContent=String(text);return n}
+function node(tag, attrs = {}, text) {
+  const svgTags = ['svg', 'line', 'text', 'g', 'rect', 'title'];
+
+  const n = svgTags.includes(tag)
+    ? document.createElementNS('http://www.w3.org/2000/svg', tag)
+    : document.createElement(tag);
+
+  for (const [k, v] of Object.entries(attrs)) {
+    n.setAttribute(k, String(v));
+  }
+
+  if (text !== undefined) {
+    n.textContent = String(text);
+  }
+
+  return n;
+}
 function metric(label,value){const div=node('div',{class:'panel'});div.append(node('div',{class:'muted'},label),node('div',{class:'metric'},value));return div}
 function render(p){
   const t=p.totals;el('metrics').replaceChildren(metric('Recorded tasks',fmt(t.tasks)),metric('Completed',fmt(t.completed)),metric('Failed',fmt(t.failed)),metric('Resolved completion rate',t.completion_rate_pct===null?'N/A':t.completion_rate_pct+'%'));
