@@ -1,62 +1,68 @@
-# Orbital v0.1.0 Project Status
+# Orbital v0.2.0 Project Status
 
-Updated: 2026-10-31
+Updated: 2026-11-26
 
-## Status summary
+## Status
 
-Orbital's early read-only MVP is a durable local Python/HTML Fleet Overview for Hermes kanban state. It is intentionally observational: it reads local kanban SQLite data and presents the supported Hermes agent roster without task mutation controls.
+Implementation complete and locally validated. Release publication pending.
 
-The implementation, documentation, deterministic stale-task regression, startup path, API smoke checks, and read-only boundary have now been validated in `C:/Users/rvanb/Projects/orbital`. The authoritative MVP is present in Git; the v0.1.0 release-polish changes remain uncommitted so a human can review, stage, commit, configure the intended remote, and push under human control.
+Orbital is a local, read-only AI agent observability platform for the Hermes Lean Agent Team.
 
-## Validation status from release-readiness checks
+## Implemented
 
-Verified against the durable Orbital source:
+- Fleet Overview and Agent Inspector.
+- Four-agent roster: Odin, Bao, Brokkr, and Veritas.
+- Fleet health and heartbeat monitoring.
+- Current and historical task assignments.
+- Task dependencies, execution records, and event history.
+- Interactive usage and token analytics.
+- Estimated API costs and model/provider breakdowns.
+- Agent Operations dashboard.
+- Task outcome timelines and workload visualization.
+- Agent task ledger and completion metrics.
+- Read-only SQLite access.
+- HTTP 501 rejection of mutation methods.
+- Truthful unavailable and missing-data states.
 
-- `python server.py --port 8766` serves the app when run from the accessible source directory.
-- `GET /`, `GET /api/fleet`, `GET /api/snapshot`, and supported agent detail endpoints return HTTP 200 in startup/API checks.
-- The four supported agents are Odin, Bao, Brokkr, and Veritas.
-- `/api/fleet` reports `read_only: true`.
-- `POST`, `PUT`, `PATCH`, and `DELETE` requests to `/api/fleet` return HTTP 501.
-- Full unittest smoke/regression suite passes, including deterministic stale-current-task coverage.
+## Validation
 
-The final release-readiness run is recorded in the task handoff. It covers UI markers, all four agent endpoints, current-task truthfulness, multiple assignments, dependency/timeline reads, missing-source degradation, write-method rejection, startup/restart, and `git diff --check`.
+- 22 of 22 automated regression tests passed.
+- Python syntax validation passed.
+- Git whitespace validation passed.
+- Preliminary credential and sensitive filename checks passed.
+- All three dashboards visually validated.
+- SVG timeline rendering corrected.
+- Fleet analytics navigation corrected.
 
-## Key architecture decisions
+## Architecture
 
-- Local-first, loopback-only MVP served at `http://127.0.0.1:8766/` by default.
-- Python standard library only for the MVP server; no package installation required.
-- Static `index.html` implements the UI; no frontend build step required.
-- Hermes kanban data is read from SQLite in read-only mode.
-- The four-agent roster is fixed for the MVP: Odin, Bao, Brokkr, Veritas.
-- `current_task` is derived only from active statuses; completed/stale tasks are not promoted to current work.
-- Write methods are disabled with HTTP 501; Orbital does not mutate Hermes tasks or trigger agents.
-- Missing or unavailable data degrades to empty/unavailable UI states instead of fabricated metrics.
+- Python standard-library server.
+- Static HTML, CSS, and JavaScript.
+- Local SQLite data sources.
+- Loopback-only network access.
+- No additional package installation or frontend build required.
 
-## Known limitations and risks
+## Known limitations
 
-Release closeout:
+- No authentication or multi-user access control.
+- No remote deployment support.
+- No agent orchestration or task mutation controls.
+- No n8n integration.
+- No automated alerting or historical replay.
+- Estimated costs are not authoritative billing totals.
+- Data freshness depends on Hermes.
 
-- No automated release blocker remains in the durable source tree.
-- The repository is intentionally uncommitted and has no configured remote; a human must inspect and perform Git closeout.
+## Release
 
-Product limitations:
+Version: v0.2.0
+Branch: main
+Repository: https://github.com/Ulfvaldr/orbital
 
-- Local read-only MVP only; no orchestration controls.
-- No task editing, assignment, state changes, reruns, approvals, or agent triggering.
-- No n8n workflow control.
-- No authentication or remote/multi-user deployment support.
-- No historical replay, advanced analytics, alerting, or federation.
-- Cost/token telemetry is unavailable unless a future source is added.
-- The UI refreshes from local SQLite reads; stale source data remains stale until Hermes updates the database.
+## Future development
 
-## Likely next development phase
+- Expanded telemetry and reporting.
+- Cost-efficiency benchmarking.
+- Optional automation integrations.
+- Additional observability capabilities.
 
-Before a human commit/push or release, inspect the uncommitted durable source tree and rerun the documented checks if desired.
-
-Recommended next implementation work after repository restoration:
-
-1. Stage and review the durable source tree.
-2. Commit and configure the intended remote under human control.
-3. Push only after reviewing the commit and repository identity.
-
-Future product phases should remain out of the MVP docs until implemented. Candidate later phases include richer timeline/history views, broader telemetry, optional n8n/status integrations, and controlled orchestration workflows, but none of those are available in the current MVP.
+Future features are outside the v0.2.0 release scope.

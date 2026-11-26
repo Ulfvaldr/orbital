@@ -1,19 +1,68 @@
-# Orbital v0.1.0 project status
+# Orbital v0.2.0 Project Status
 
-Status: v0.1.0 read-only MVP, locally validated.
+Updated: 2026-11-26
 
-Canonical path: `C:\Users\rvanb\Projects\orbital`
+## Status
 
-Implemented:
+Implementation complete and locally validated. Release publication pending.
 
-- Standard-library loopback server and static dark Fleet Overview UI.
-- Fixed Odin/Bao/Brokkr/Veritas roster with multi-assignment summaries.
-- Deterministic current-task derivation: active task only; completed-only history yields `null`.
-- Read-only task, run, event, and dependency/handoff endpoints.
-- Honest unavailable-source and unavailable-telemetry states.
-- Explicit HTTP 501 rejection for all mutation methods.
-- Regression tests for current-task selection, assignments, dependencies, timeline, invalid source, serving, and write rejection.
+Orbital is a local, read-only AI agent observability platform for the Hermes Lean Agent Team.
 
-Not implemented by design: orchestration controls, task editing, n8n integration, cost/token fabrication, authentication, remote deployment, and replay/re-execution.
+## Implemented
 
-Release focus: data correctness, operational visibility, read-only safety, and reliable local operation. Visual polish, deeper telemetry, and orchestration controls remain future work. See `docs/provenance.md` for the implementation boundary and source-of-truth notes.
+- Fleet Overview and Agent Inspector.
+- Four-agent roster: Odin, Bao, Brokkr, and Veritas.
+- Fleet health and heartbeat monitoring.
+- Current and historical task assignments.
+- Task dependencies, execution records, and event history.
+- Interactive usage and token analytics.
+- Estimated API costs and model/provider breakdowns.
+- Agent Operations dashboard.
+- Task outcome timelines and workload visualization.
+- Agent task ledger and completion metrics.
+- Read-only SQLite access.
+- HTTP 501 rejection of mutation methods.
+- Truthful unavailable and missing-data states.
+
+## Validation
+
+- 22 of 22 automated regression tests passed.
+- Python syntax validation passed.
+- Git whitespace validation passed.
+- Preliminary credential and sensitive filename checks passed.
+- All three dashboards visually validated.
+- SVG timeline rendering corrected.
+- Fleet analytics navigation corrected.
+
+## Architecture
+
+- Python standard-library server.
+- Static HTML, CSS, and JavaScript.
+- Local SQLite data sources.
+- Loopback-only network access.
+- No additional package installation or frontend build required.
+
+## Known limitations
+
+- No authentication or multi-user access control.
+- No remote deployment support.
+- No agent orchestration or task mutation controls.
+- No n8n integration.
+- No automated alerting or historical replay.
+- Estimated costs are not authoritative billing totals.
+- Data freshness depends on Hermes.
+
+## Release
+
+Version: v0.2.0
+Branch: main
+Repository: https://github.com/Ulfvaldr/orbital
+
+## Future development
+
+- Expanded telemetry and reporting.
+- Cost-efficiency benchmarking.
+- Optional automation integrations.
+- Additional observability capabilities.
+
+Future features are outside the v0.2.0 release scope.

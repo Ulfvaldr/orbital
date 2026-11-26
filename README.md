@@ -1,19 +1,24 @@
-# Orbital v0.1.0
+# Orbital v0.2.0
 
 Orbital is the local, read-only observation surface for the Hermes Lean Agent Team. Hermes remains the system that runs agents and owns kanban state; Orbital is a companion viewer that reads that state so a human can inspect agent status, current work, recent requests, and basic system indicators.
 
-**v0.1.0 is an early, locally validated MVP.** It is useful for inspecting a local Hermes kanban database, but it is not an orchestration console or a production operations platform.
+**v0.2.0 is a locally validated, read-only AI agent observability dashboard.** It is useful for inspecting a local Hermes kanban database, but it is not an orchestration console or a production operations platform.
 
 ## Current MVP scope
 
-The MVP serves:
+The current release provides:
 
 - a dark mission-control Fleet Overview UI at `/`;
 - an outliner and fleet tiles for the supported Hermes agents;
 - a read-only Agent Inspector for each supported agent;
 - a Latest Requests section populated from recorded Hermes task data when available;
 - simple System Indicators that distinguish available, unavailable, and not-connected data instead of fabricating metrics;
-- JSON read APIs for smoke checks and simple integrations.
+- JSON read APIs for smoke checks and simple integrations;
+- fleet health and heartbeat monitoring;
+- interactive usage and token analytics at `/stats.html`;
+- estimated API costs and model/provider breakdowns;
+- agent operations analytics at `/operations.html`;
+- task outcome timelines, workload summaries, and completion metrics.
 
 Supported Hermes agents in this MVP:
 
@@ -78,6 +83,15 @@ In Windows Command Prompt:
 - `GET /api/agents/Odin`, `/api/agents/Bao`, `/api/agents/Brokkr`, `/api/agents/Veritas` — read-only detail for one supported agent.
 - `GET /api/agents/<unknown>` — an unavailable read-only object; this does not create or modify anything.
 
+### Analytics endpoints
+
+- `GET /stats.html` - Usage analytics dashboard.
+- `GET /operations.html` - Agent Operations dashboard.
+- `GET /api/usage` - Token usage and estimated cost analytics.
+- `GET /api/operations` - Task outcomes and workload analytics.
+- `/api/runs/` - Read-only execution records.
+- `/api/events/` - Read-only task events.
+
 ## What data Orbital reads
 
 Orbital reads only local Hermes kanban data from SQLite tables when they exist:
@@ -100,7 +114,7 @@ Orbital must be truthful when telemetry is incomplete:
 - Dependencies preserve the authoritative parent-to-child direction and are scoped to links touching that agent's assignment IDs; missing links produce no fabricated relationship.
 - Completed or stale historical tasks are not promoted to `current_task` just because they are the most recent rows.
 - If an agent has assignments but none are current, the agent may appear idle while still showing assignment history/counts.
-- Cost/token metrics and n8n status are unavailable/not connected in v0.1.0. Orbital does not estimate or fabricate them. A missing database, missing table, failed query, or stale Hermes writer produces empty or unavailable states instead of invented activity.
+- Usage analytics displays recorded token telemetry and available estimated costs. Missing and unclassified billing data is explicitly identified. Orbital does not fabricate telemetry. n8n remains disconnected. A missing database, missing table, failed query, or stale Hermes writer produces empty or unavailable states instead of invented activity.
 
 ## Verify
 
@@ -126,8 +140,8 @@ If this directory is a valid Git worktree, also run:
 - No authentication or multi-user access control.
 - No write/orchestration controls of any kind.
 - No n8n integration in the MVP.
-- No historical replay, advanced analytics, alerting, or multi-instance federation.
+- No historical replay, automated alerting, or multi-instance federation.
 - The current UI is a compact MVP, not a complete operations platform.
 - Runtime truthfulness depends on the selected Hermes kanban database being present and current.
 
-See `CHANGELOG.md` for the v0.1.0 release scope and `docs/architecture.md` for implementation boundaries.
+See `CHANGELOG.md` for the v0.2.0 release scope and `docs/architecture.md` for implementation boundaries.
